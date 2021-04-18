@@ -3,12 +3,18 @@ package usermanager
 import (
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 
 	datastore "github.com/fulgurant/datastore"
 
 	"go.uber.org/zap"
+)
+
+// Constants
+var (
+	userBucket = []byte("user")
 )
 
 // Errors
@@ -41,12 +47,16 @@ func New(options *Options) (*UserManager, error) {
 func (um *UserManager) RegisterEndpoints(r gin.IRouter) {
 	r.POST("/user/signup", um.postSignup)
 
-	if um.options.debug {
-		r.GET("/users", um.getUsers)
-	}
-
 	if um.options.logger != nil {
 		um.options.logger.Info("endpoints registered")
+	}
+
+	if um.options.debug {
+		r.GET("/users", um.getUsers)
+
+		if um.options.logger != nil {
+			um.options.logger.Info("debug endpoints registered")
+		}
 	}
 }
 
@@ -74,11 +84,24 @@ func (um *UserManager) postSignup(ctx *gin.Context) {
 
 // getUsers is a debug endpoint
 func (um *UserManager) getUsers(ctx *gin.Context) {
-	//ctx.Str
+	builder := strings.Builder{}
+
+	err := um.options.ds.List(userBucket, nil, func(key []byte, value []byte) error {
+		builder.Write(key)
+		builder.WriteRune('\n')
+		return nil
+	})
+
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	ctx.String(http.StatusOK, builder.String())
 }
 
 func (um *UserManager) Signup(u *User) error {
-	if _, err := um.options.ds.Get(u.Name); err != datastore.ErrNotFound {
+	if _, err := um.options.ds.Get(userBucket, []byte(u.Name)); err != datastore.ErrNotFound {
 		return ErrAlreadyExists
 	}
 
@@ -92,7 +115,12 @@ func (um *UserManager) Signup(u *User) error {
 
 	u.Approved = um.options.autoApprove
 
-	if err := um.options.ds.Set(u.Name, u); err != nil {
+	b, err := u.ToBytes()
+	if err != nil {
+		return err
+	}
+
+	if err := um.options.ds.Set(userBucket, []byte(u.Name), b); err != nil {
 		if um.options.logger != nil {
 			um.options.logger.Error("could not signup", zap.Error(err))
 		}

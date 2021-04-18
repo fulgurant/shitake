@@ -11,7 +11,7 @@ replace (
 
 require (
 	github.com/alecthomas/kong v0.2.16
-	github.com/fulgurant/datastore v0.0.2
+	github.com/fulgurant/datastore v0.0.4
 	github.com/fulgurant/health v0.0.2
 	github.com/fulgurant/server v0.0.0-20210417220906-cfd6b150159d
 	github.com/fulgurant/simplehash v0.0.3

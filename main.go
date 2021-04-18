@@ -18,12 +18,12 @@ import (
 )
 
 type Config struct {
-	Run struct{} `cmd:"" default:"1" help:"Run the web service"`
-
+	Run              struct{}      `cmd:"" default:"1" help:"Run the web service"`
 	Redis            string        `default:"redis" help:"IP Address of Redis Server" short:"r"`
 	ListenAddress    string        `default:":8080" help:"Address on which the service will run" short:"p"`
 	ShutdownDuration time.Duration `default:"1s" help:"Duration to take to allow existing connections to complete" short:"s"`
 	WarningDuration  time.Duration `default:"1s" help:"Duration to take to allow routing algorithms to reroute" short:"w"`
+	Debug            bool          `default:"false" help:"Enable debug endpoints" short:"d"`
 }
 
 func run(cfg *Config) error {
@@ -57,7 +57,8 @@ func run(cfg *Config) error {
 		DefaultOptions().
 		WithLogger(logger).
 		WithGetSetter(ds).
-		WithHasher(sh)
+		WithHasher(sh).
+		WithDebug(cfg.Debug)
 
 	um, err := usermanager.New(umOptions)
 	if err != nil {

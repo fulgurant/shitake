@@ -1,6 +1,7 @@
 package usermanager
 
 import (
+	"encoding/json"
 	"errors"
 
 	simplehash "github.com/fulgurant/simplehash"
@@ -14,10 +15,10 @@ var (
 )
 
 type User struct {
-	Name     string
-	Email    string
-	Password string
-	Approved bool
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Approved bool   `json:"approved"`
 }
 
 func (u *User) Check() error {
@@ -37,4 +38,12 @@ func (u *User) Hash(hs simplehash.Hasher) error {
 	u.Email = hs.Hash(u.Email)
 	u.Password = hs.Hash(u.Password)
 	return nil
+}
+
+func (u *User) ToBytes() ([]byte, error) {
+	return json.Marshal(u)
+}
+
+func (u *User) FromBytes(value []byte) error {
+	return json.Unmarshal(value, u)
 }
